@@ -5,11 +5,46 @@ import LoadingState from '../components/LoadingState';
 import ErrorMessage from '../components/ErrorMessage';
 import ConfirmationModal from '../components/ConfirmationModal';
 
+// Field label mapping for display
+const FIELD_LABELS = {
+  id: 'ID',
+  email: 'Email',
+  name: 'Name',
+  collegeRollNumber: 'CRN',
+  semester: 'Semester',
+  academicYear: 'Academic Year',
+  graduationYear: 'Graduation Year',
+  sgpa: 'SGPA',
+  faculty: 'Faculty',
+  program: 'Program',
+  registrationNumber: 'Reg. Number',
+  createdAt: 'Created At',
+  updatedAt: 'Updated At',
+};
+
 export default function StudentList() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+  const [showFieldControl, setShowFieldControl] = useState(false);
+
+  // Field visibility control — all fields from the student JSON
+  const [visibleFields, setVisibleFields] = useState({
+    id: true,
+    email: true,
+    name: true,
+    collegeRollNumber: true,
+    semester: true,
+    academicYear: true,
+    graduationYear: true,
+    sgpa: true,
+    faculty: true,
+    program: true,
+    registrationNumber: false ,
+    createdAt: false,
+    updatedAt: false,
+  });
+
   // Delete modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState(null);
@@ -50,13 +85,9 @@ export default function StudentList() {
     try {
       setDeleteLoading(true);
       const res = await api.deleteStudent(studentToDelete.id);
-      
-      // Update local state and show toast-like success
       setActionSuccessMessage(res.message || 'Student deleted successfully');
       setStudents((prev) => prev.filter((s) => s.id !== studentToDelete.id));
       closeDeleteModal();
-      
-      // Clear success message after 3 seconds
       setTimeout(() => setActionSuccessMessage(''), 3000);
     } catch (err) {
       alert(err.message || 'Failed to delete student.');
@@ -64,6 +95,12 @@ export default function StudentList() {
       setDeleteLoading(false);
     }
   };
+
+  const toggleField = (field) => {
+    setVisibleFields((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const activeFields = Object.keys(visibleFields).filter((f) => visibleFields[f]);
 
   if (loading) {
     return <LoadingState message="Fetching student directory..." />;
@@ -84,7 +121,16 @@ export default function StudentList() {
             A list of all current students enrolled in the college system.
           </p>
         </div>
-        <div className="mt-4 sm:mt-0">
+        <div className="mt-4 sm:mt-0 flex items-center gap-3">
+          <button
+            onClick={() => setShowFieldControl((v) => !v)}
+            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 text-sm font-semibold rounded-xl text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 shadow-sm transition-all cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h18M3 8h18M3 12h10" />
+            </svg>
+            Columns
+          </button>
           <button
             onClick={() => navigate('/student/create')}
             className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-all cursor-pointer"
@@ -93,6 +139,53 @@ export default function StudentList() {
           </button>
         </div>
       </div>
+
+      {/* Field Visibility Control Panel */}
+      {showFieldControl && (
+        <div className="mb-6 p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Toggle Visible Columns</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setVisibleFields(Object.fromEntries(Object.keys(visibleFields).map((k) => [k, true])))}
+                className="text-xs px-3 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/30 text-purple-700 dark:text-purple-400 font-medium hover:bg-purple-100 dark:hover:bg-purple-950/50 transition-colors"
+              >
+                Show All
+              </button>
+              <button
+                onClick={() => setVisibleFields(Object.fromEntries(Object.keys(visibleFields).map((k) => [k, false])))}
+                className="text-xs px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                Hide All
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {Object.keys(visibleFields).map((field) => (
+              <button
+                key={field}
+                onClick={() => toggleField(field)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                  visibleFields[field]
+                    ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                    : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-purple-400'
+                }`}
+              >
+                {visibleFields[field] ? (
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+                {FIELD_LABELS[field]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {actionSuccessMessage && (
         <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl dark:bg-emerald-950/20 dark:border-emerald-900/50 dark:text-emerald-400 flex items-center space-x-2">
@@ -127,21 +220,15 @@ export default function StudentList() {
             <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
               <thead className="bg-gray-50 dark:bg-gray-850">
                 <tr>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    CRN
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Semester
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Program
-                  </th>
+                  {activeFields.map((field) => (
+                    <th
+                      key={field}
+                      scope="col"
+                      className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                    >
+                      {FIELD_LABELS[field]}
+                    </th>
+                  ))}
                   <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
@@ -150,25 +237,17 @@ export default function StudentList() {
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
                 {students.map((student) => (
                   <tr key={student.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-850/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-semibold text-gray-950 dark:text-white">
-                        {student.name}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {student.email}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {student.collegeRollNumber}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {student.semester}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {student.program}
-                    </td>
+                    {activeFields.map((field) => (
+                      <td key={field} className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                        {field === 'name' ? (
+                          <span className="font-semibold text-gray-950 dark:text-white">{student[field]}</span>
+                        ) : field === 'createdAt' || field === 'updatedAt' ? (
+                          new Date(student[field]).toLocaleDateString()
+                        ) : (
+                          student[field] ?? '—'
+                        )}
+                      </td>
+                    ))}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
                       <button
                         onClick={() => navigate(`/student/update/${student.id}`)}
