@@ -12,7 +12,7 @@ export default defineConfig({
     port: 5555,
     proxy: {
       '/api': {
-        target: 'http://localhost:8008',
+        target: 'https://college-api-sandbox.onrender.com',
         changeOrigin: true,
       }
     }
